@@ -60,44 +60,44 @@ export const BOND_BOW_S = 7;
 export const BOND_ON_TICK = 3;
 export const BOND_OFF_BEFORE_HOME = 2;
 
-export const LINES = ["Arlan", "Marat"];
+// A line may hold more than one word. Bonds never cross the space.
+export const LINES = ["Just", "Do It"];
 
-// --- poses -----------------------------------------------------------------
-// Each line in each pose has a CONTOUR (arc, vee, rake, wave, two-step), not
-// per-letter noise, and the two lines never take the same contour in one pose.
-// Line 1's contour sits above its baseline, line 2's below, so the lines
-// separate AS they scatter and clearance improves with amplitude.
+// --- contours --------------------------------------------------------------
+// A line in a pose takes a CONTOUR, not independent per-letter noise: that is
+// the whole difference between a row that looks scattered and one that looks
+// placed. Each maps u in [0,1] across the line to a signed shape in [-1,1].
+export const CONTOURS = {
+  arc: (u) => Math.sin(Math.PI * u) * 2 - 1,
+  vee: (u) => 1 - Math.sin(Math.PI * u) * 2,
+  rake: (u) => 2 * u - 1,
+  wave: (u) => Math.sin(2 * Math.PI * u),
+  twoStep: (u) => (u < 0.5 ? -1 : 1) * (0.75 + 0.25 * Math.cos(Math.PI * u)),
+};
+
+// Centre-to-centre spacing a scattered line starts from, before it is fitted
+// to the face actually in use. A gap that straddles a word is opened up, so
+// the two molecules on a line stay legibly separate.
+export const BASE_GAP = 74 / 304;
+export const WORD_SPACE_MULT = 1.7;
+
+// One contour is centred above its baseline and the other below, so the lines
+// separate AS they scatter: a bigger amplitude pushes them further apart
+// rather than into each other.
+export const DY_BIAS = 30 / 304;
+export const DY_AMP = 26 / 304;
+
+// Each pose gives every line a contour, an amplitude, how much that contour
+// also shapes the gaps, how much of the card width the line reaches for, and a
+// shift expressed as a fraction of the line's OWN span. No two lines take the
+// same contour in the same pose, and no pose gives both lines the same fill.
 export const POSES = [
-  {
-    gaps: [[56.3, 58.5, 64.6, 71.0].map((v) => v / 304), [75.3, 74.7, 77.6, 90.2].map((v) => v / 304)],
-    shift: [4.5 / 304, -10.2 / 304],
-    dy: [[-30.0, -13.0, -6.0, -13.0, -30.0].map((v) => v / 304), [8.0, 19.0, 30.0, 41.0, 52.0].map((v) => v / 304)],
-  },
-  {
-    gaps: [[67.8, 65.9, 65.1, 77.9].map((v) => v / 304), [74.2, 72.5, 94.6, 81.7].map((v) => v / 304)],
-    shift: [-3.8 / 304, 12.7 / 304],
-    dy: [[-6.0, -30.0, -54.0, -30.0, -6.0].map((v) => v / 304), [48.4, 42.1, 11.6, 17.9, 48.4].map((v) => v / 304)],
-  },
-  {
-    gaps: [[60.6, 60.8, 68.9, 68.0].map((v) => v / 304), [94.9, 92.1, 80.5, 76.9].map((v) => v / 304)],
-    shift: [-13.1 / 304, 6.6 / 304],
-    dy: [[-54.0, -42.0, -30.0, -18.0, -6.0].map((v) => v / 304), [8, 8, 8, 52, 52].map((v) => v / 304)],
-  },
-  {
-    gaps: [[75.1, 70.3, 60.8, 73.5].map((v) => v / 304), [89.5, 76.7, 87.4, 77.3].map((v) => v / 304)],
-    shift: [-4.6 / 304, -2.9 / 304],
-    dy: [[-27.0, -6.2, -33.0, -53.8, -27.0].map((v) => v / 304), [30.0, 45.6, 52.0, 45.6, 30.0].map((v) => v / 304)],
-  },
-  {
-    gaps: [[70.2, 74.4, 77.1, 77.5].map((v) => v / 304), [95.8, 91.0, 79.4, 76.2].map((v) => v / 304)],
-    shift: [4.9 / 304, -11.4 / 304],
-    dy: [[-54, -54, -54, -6, -6].map((v) => v / 304), [52.0, 30.0, 8.0, 30.0, 52.0].map((v) => v / 304)],
-  },
-  {
-    gaps: [[60.2, 76.3, 69.2, 71.3].map((v) => v / 304), [74.3, 81.6, 93.8, 87.6].map((v) => v / 304)],
-    shift: [-1.3 / 304, 8.4 / 304],
-    dy: [[-30.0, -13.0, -6.0, -13.0, -30.0].map((v) => v / 304), [8.0, 19.0, 30.0, 41.0, 52.0].map((v) => v / 304)],
-  },
+  { contour: ["arc", "rake"], amp: [0.95, 0.85], gapAmp: [0.16, 0.12], fill: [0.72, 0.8], shift: [0.03, -0.05] },
+  { contour: ["vee", "wave"], amp: [1.1, 0.9], gapAmp: [0.2, 0.18], fill: [0.79, 0.68], shift: [-0.025, 0.06] },
+  { contour: ["rake", "arc"], amp: [0.8, 1.05], gapAmp: [0.1, 0.2], fill: [0.67, 0.78], shift: [-0.06, 0.035] },
+  { contour: ["wave", "twoStep"], amp: [1.0, 0.95], gapAmp: [0.22, 0.14], fill: [0.76, 0.7], shift: [-0.03, -0.02] },
+  { contour: ["twoStep", "vee"], amp: [0.9, 1.15], gapAmp: [0.12, 0.21], fill: [0.7, 0.77], shift: [0.035, -0.055] },
+  { contour: ["arc", "wave"], amp: [0.75, 1.0], gapAmp: [0.18, 0.16], fill: [0.81, 0.73], shift: [-0.015, 0.045] },
 ];
 
 export const SCATTERS_MIN = 2;

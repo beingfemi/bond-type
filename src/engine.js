@@ -9,7 +9,11 @@ import {
   BOND_MIN_CELLS,
   BOND_WEIGHT_CELLS,
   BOND_ON_TICK,
+  BASE_GAP,
   CAP_PIXELS,
+  CONTOURS,
+  DY_AMP,
+  DY_BIAS,
   JITTER_CELLS,
   JITTER_EASE_TICKS,
   JITTER_GATE,
@@ -31,6 +35,7 @@ import {
   SCATTERS_MAX,
   SCATTERS_MIN,
   WHITE,
+  WORD_SPACE_MULT,
 } from "./params.js";
 
 // Distance from a letter's optical centre to its ink edge along (ux, uy).
@@ -115,17 +120,24 @@ export class BondType {
     this.letters = [];
     this.pairs = [];
 
-    LINES.forEach((word, li) => {
+    LINES.forEach((text, li) => {
       const baseline = (BASELINE_1 + li * LINE_PITCH) * H;
-      const total = ctx.measureText(word).width;
+      const total = ctx.measureText(text).width;
       const lineLeft = (W - total) / 2;
       const start = this.letters.length;
+      let word = 0;
 
-      for (let i = 0; i < word.length; i++) {
-        const x = lineLeft + ctx.measureText(word.slice(0, i)).width;
-        const m = ctx.measureText(word[i]);
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        // A space is not a letter: it advances the line and opens a new word.
+        if (ch === " ") {
+          word++;
+          continue;
+        }
+        const x = lineLeft + ctx.measureText(text.slice(0, i)).width;
+        const m = ctx.measureText(ch);
         this.letters.push({
-          ch: word[i],
+          ch,
           x,
           y: baseline,
           left: -(m.actualBoundingBoxLeft || 0),
@@ -135,22 +147,41 @@ export class BondType {
           px: [],
           py: [],
           line: li,
+          word,
           slot: i,
         });
-
-        // Bonds only ever connect letters WITHIN a word.
-        if (i > 0) this.pairs.push([start + i - 1, start + i]);
       }
 
       const ls = this.letters.slice(start);
+      const n = ls.length;
+
+      // Bonds only ever connect letters WITHIN a word. A proximity rule that
+      // lets any two close letters bond stops reading as words and becomes a
+      // lattice.
+      for (let i = 1; i < n; i++) {
+        if (ls[i].word === ls[i - 1].word) this.pairs.push([start + i - 1, start + i]);
+      }
+
       const cx = (l) => l.x + (l.left + l.right) / 2;
-      const typesetCenter = (cx(ls[0]) + cx(ls[ls.length - 1])) / 2;
       const halfInk = (l) => (l.right - l.left) / 2;
-      const endHalf = Math.max(halfInk(ls[0]), halfInk(ls[ls.length - 1]));
+      const typesetCenter = (cx(ls[0]) + cx(ls[n - 1])) / 2;
+      const endHalf = Math.max(halfInk(ls[0]), halfInk(ls[n - 1]));
+      const at = (i) => (n > 1 ? i / (n - 1) : 0.5);
+      // One contour above its baseline, the other below.
+      const dir = li < LINES.length / 2 ? -1 : 1;
 
       POSES.forEach((pose) => {
-        const gaps = pose.gaps[li].map((g) => g * H);
-        const shift = pose.shift[li] * H;
+        const shape = CONTOURS[pose.contour[li]];
+
+        // The gaps take the contour too, so the spacing is placed rather than
+        // noisy — and a gap that straddles a word is opened up.
+        const gaps = [];
+        for (let i = 0; i < n - 1; i++) {
+          const u = (i + 0.5) / Math.max(1, n - 1);
+          let g = BASE_GAP * H * (1 + pose.gapAmp[li] * shape(u));
+          if (ls[i + 1].word !== ls[i].word) g *= WORD_SPACE_MULT;
+          gaps.push(g);
+        }
         const raw = gaps.reduce((a, g) => a + g, 0);
 
         // Widen until the tightest pair can hold a bond of real length.
@@ -160,17 +191,25 @@ export class BondType {
             POSE_MIN_FREE_CELLS * this.cell + halfInk(ls[i]) + halfInk(ls[i + 1]);
           if (gaps[i] > 0) k = Math.max(k, need / gaps[i]);
         }
-        // ...but never so far that a letter approaches the frame edge. A
-        // bigger amplitude has to improve the clearance, not spend it.
-        const room = W / 2 - POSE_EDGE_MARGIN * W - Math.abs(shift) - endHalf;
-        if (raw > 0) k = Math.min(k, (2 * room) / raw);
+        // Reach for the pose's share of the card, so the molecule occupies
+        // the frame instead of stopping the moment a bond merely fits.
+        const endInk = halfInk(ls[0]) + halfInk(ls[n - 1]);
+        if (raw > 0) k = Math.max(k, (pose.fill[li] * W - endInk) / raw);
+
+        // ...but never so far that a letter approaches the frame edge. The
+        // shift is a fraction of the line's own span, so it is clamped by the
+        // same solve: a bigger amplitude has to improve the clearance, not
+        // spend it.
+        const s = Math.abs(pose.shift[li]);
+        const room = W / 2 - POSE_EDGE_MARGIN * W - endHalf;
+        if (raw > 0) k = Math.min(k, room / (raw * (0.5 + s)));
 
         const span = raw * k;
-        let x = typesetCenter + shift - span / 2;
+        let x = typesetCenter + pose.shift[li] * span - span / 2;
         ls.forEach((l, i) => {
           if (i > 0) x += gaps[i - 1] * k;
           l.px.push(x - cx(l));
-          l.py.push(pose.dy[li][i] * H);
+          l.py.push(dir * (DY_BIAS + pose.amp[li] * DY_AMP * shape(at(i))) * H);
         });
       });
     });

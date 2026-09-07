@@ -1,10 +1,14 @@
 # bond-type
 
-A two-line name in a pixel typeface on flat bright red that unfolds into a
-*molecule*: the letters drift apart into nodes while stair-stepped runs of
-square pixels grow as bonds in the spaces between adjacent letters within each
-word. It re-scatters through a few more poses, folds back into plain typeset
-text, and holds.
+**JUST / DO IT** set on two lines in a pixel typeface on flat bright red, which
+unfolds into a *molecule*: the letters drift apart into nodes while
+stair-stepped runs of square pixels grow as bonds in the spaces between adjacent
+letters within each word. It re-scatters through a few more poses, folds back
+into plain typeset text, and holds.
+
+A line may hold more than one word. `DO` and `IT` share line two and bond
+internally, but nothing ever bonds across the space between them — they read as
+two separate chains.
 
 Canvas 2D, two colors, no framework.
 
@@ -51,18 +55,23 @@ resampled with a fractional tick and lerped, so the timeline plays continuously
 
 **The cycle varies.** A library of scatter poses, a fresh random sequence and
 length each time round, never the same pose twice running. Each line in each
-pose has a *contour* — an arc, a vee, a rake, a wave, a two-step — rather than
+pose takes a *contour* — an arc, a vee, a rake, a wave, a two-step — rather than
 independent per-letter noise; that is the difference between a row that looks
-scattered and one that looks placed. The two lines never take the same contour
-in the same pose, and one line's contour is centred above its baseline and the
-other's below, so the lines separate *as* they scatter: a bigger amplitude
-pushes them further apart rather than into each other.
+scattered and one that looks placed. A pose names a contour per line rather than
+listing per-letter offsets, so the poses fit whatever words the card is set in.
+The contour shapes the gaps as well as the heights. The two lines never take the
+same contour in the same pose, and one line's contour is centred above its
+baseline and the other's below, so the lines separate *as* they scatter: a
+bigger amplitude pushes them further apart rather than into each other.
 
 **The poses are constrained and checked, not sampled and hoped over.** Poses are
-authored as proportions, so a wider face squeezes the free space out of them and
-the bonds vanish. At layout time each line in each pose is widened until its
-tightest pair leaves room for a real bond, then clamped so no letter comes near
-the frame edge.
+proportions, so a wider face squeezes the free space out of them and the bonds
+vanish. At layout time each line in each pose is widened until its tightest pair
+leaves room for a real bond, then widened further to reach that pose's share of
+the card — otherwise the molecule stops growing the moment a bond merely fits,
+and sits small in the frame. Both are then clamped, together with the shift
+(expressed as a fraction of the line's own span), by one solve that keeps every
+letter clear of the frame edge.
 
 **A one-cell twitch** adds life while the card is a molecule, gated to the
 scattered state and cut the instant the fold home begins — a letter that still
