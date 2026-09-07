@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bond Type — Arlan Marat</title>
+    <meta
+      name="description"
+      content="A two-line name in a pixel typeface that unfolds into a molecule: the letters drift apart into nodes and stair-stepped runs of square pixels grow as bonds between them."
+    />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟥</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --red: #f5333f;
+        --white: #fdfefd;
+        --page: #0e0e10;
+        --border-line: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: clamp(16px, 4vw, 48px);
+        background: var(--page);
+        color: var(--white);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      [data-canvas-card] {
+        position: relative;
+        margin-inline: auto;
+        width: 100%;
+        max-width: 1344px;
+        aspect-ratio: 1344 / 620;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid var(--border-line);
+        background-color: var(--red);
+        user-select: none;
+      }
+
+      [data-canvas-card] canvas {
+        display: block;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      data-canvas-card
+      role="img"
+      aria-label="The name Arlan Marat in a white pixel typeface on bright red. The letters drift apart into a molecule diagram, fine stair-stepped runs of square pixels bonding each letter to the next within its word. The chain re-scatters through a few different shapes, then the letters glide back into the plain typeset name and it starts again with a new sequence."
+    >
+      <canvas id="bond-type"></canvas>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
